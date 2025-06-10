@@ -68,13 +68,13 @@ python kalium.py
 
 ## ✅ You're now logged in and Kalium Selfbot is active!
 
-## 📖 Available Commands
-## Command	Description
-## .activity [type] [text]	Set a custom activity (types: playing, streaming, listening, watching)
-## .status [text]	Shortcut for .activity playing
-## .embed	Create a styled message through prompt
-## .dm [guild_id] [amount] [message]	DM up to 50 non-admin users with open DMs
-## .clear [amount]	Delete your own messages in the channel
-## .emojis [guild_id] (optional_path)	Download all emojis & stickers from the server
-## .reopendm	Reopens closed DMs by sending blank messages
-## .logout	Shuts down Kalium selfbot safely
+ 📖 Available Commands
+ Command	Description
+ .activity [type] [text]	Set a custom activity (types: playing, streaming, listening, watching)
+ .status [text]	Shortcut for .activity playing
+ .embed	Create a styled message through prompt
+ .dm [guild_id] [amount] [message]	DM up to 50 non-admin users with open DMs
+ .clear [amount]	Delete your own messages in the channel
+ .emojis [guild_id] (optional_path)	Download all emojis & stickers from the server
+ .reopendm	Reopens closed DMs by sending blank messages
+ .logout Shuts down Kalium selfbot safely
