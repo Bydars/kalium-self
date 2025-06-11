@@ -2,15 +2,17 @@ from discord.ext import commands
 import discord
 import asyncio
 import os
+import sys
+import re
 import aiohttp
 from colorama import init, Fore, Style
 from pypresence import Presence
 import threading
 import time
 
-COMMAND_PREFIX = "."
+COMMAND_PREFIX = "." 
 DEFAULT_ACTIVITY = discord.Game(name="Kalium ☢️")
-RPC_CLIENT_ID = "client_id"  
+RPC_CLIENT_ID = ""  #add your discord bot client_id
 
 init()
 print(Fore.CYAN + "╔════════════════════════════════════════════╗")
@@ -19,14 +21,23 @@ print("║" + Fore.LIGHTBLUE_EX + "        Custom Presence & DM Utility        "
 print("╚════════════════════════════════════════════╝" + Style.RESET_ALL)
 
 token = input("🔑 Enter your token: ").strip()
+
 class KaliumRPC:
     def __init__(self, client_id):
         self.client_id = client_id
         self.rpc = None
         self.running = True
-        self.state = "streaming"
-        self.details = "Kalium ☢️"
-        self.image = "change-me"
+
+        self.details = "Made by Dars"
+        self.state = "streaming here add text without removing streaming" #change-me
+        self.large_image = "" #add the name that you put on the image 1024x1024
+        self.large_text = "Kalium Selfbot" 
+        self.small_image = "" #add the name that you put on the image 512x512
+        self.small_text = "Kalium Selfbot" 
+        self.party_id = "kalium-party-001"
+        self.party_size = [1, 5] #add the party size 
+        self.join_secret = "kalium-join-key"
+        self.start_time = time.time()
 
     def start(self):
         def run():
@@ -35,11 +46,16 @@ class KaliumRPC:
                 self.rpc.connect()
                 while self.running:
                     self.rpc.update(
-                        state=self.state,
                         details=self.details,
-                        large_image=self.image,
-                        large_text="Kalium Selfbot",
-                        start=time.time()
+                        state=self.state,
+                        large_image=self.large_image,
+                        large_text=self.large_text,
+                        small_image=self.small_image,
+                        small_text=self.small_text,
+                        party_id=self.party_id,
+                        party_size=self.party_size,
+                        join=self.join_secret,
+                        start=self.start_time
                     )
                     time.sleep(15)
             except Exception as e:
@@ -49,6 +65,24 @@ class KaliumRPC:
 
     def update_status(self, status_text, status_type):
         self.state = f"{status_type} {status_text}"
+
+    def set_details(self, text):
+        self.details = text
+
+    def set_large_image(self, key, text=""):
+        self.large_image = key
+        self.large_text = text
+
+    def set_small_image(self, key, text=""):
+        self.small_image = key
+        self.small_text = text
+
+    def set_party(self, party_id="kalium-party", current=1, max_size=5):
+        self.party_id = party_id
+        self.party_size = [current, max_size]
+
+    def set_join_secret(self, secret):
+        self.join_secret = secret
 
 
 kalium_rpc = KaliumRPC(RPC_CLIENT_ID)
@@ -82,9 +116,14 @@ async def help(ctx):
     await ctx.send(msg)
 
 @bot.command()
-async def activity(ctx, type: str, *, text: str):
+async def activity(ctx, type: str = None, *, args: str = None):
     await ctx.message.delete()
 
+    if not type or not args:
+        return await ctx.send("❌ Usage: `.activity [type] [text]`", delete_after=6)
+
+    text = args
+    type = type.lower()
     rpc_types = {
         "playing": "Playing",
         "streaming": "Streaming",
@@ -92,15 +131,31 @@ async def activity(ctx, type: str, *, text: str):
         "watching": "Watching"
     }
 
-    type = type.lower()
     if type not in rpc_types:
         return await ctx.send("❌ Invalid type. Use: playing, streaming, listening, watching", delete_after=6)
 
+    if type == "playing":
+        discord_activity = discord.Game(name=text)
+    elif type == "streaming":
+        discord_activity = discord.Streaming(name=text, url="https://twitch.tv/") #add your twitch
+    elif type == "listening":
+        discord_activity = discord.Activity(type=discord.ActivityType.listening, name=text)
+    elif type == "watching":
+        discord_activity = discord.Activity(type=discord.ActivityType.watching, name=text)
+
     try:
-        kalium_rpc.update_status(text, rpc_types[type])
-        await ctx.send(f"✅ Rich Presence updated:\n• Type: `{type}`\n• Text: `{text}`")
+        await bot.change_presence(activity=discord_activity)
+
+        kalium_rpc.state = f"{rpc_types[type]} {text}"
+
+        await ctx.send(
+            f"✅ **Presence Updated:**\n"
+            f"• Type: `{type}`\n"
+            f"• Text: `{text}`"
+        )
+
     except Exception as e:
-        await ctx.send(f"❌ Failed to update RPC: {str(e)}", delete_after=6)
+        await ctx.send(f"❌ Failed to update activity: {e}", delete_after=6)
 
 @bot.command()
 async def embed(ctx):
@@ -108,20 +163,32 @@ async def embed(ctx):
 
     def check(m): return m.author == ctx.author and m.channel == ctx.channel
 
-    await ctx.send("📝 Enter the title:")
-    title = await bot.wait_for("message", check=check)
-    await title.delete()
+    try:
+        await ctx.send("📝 **Enter the title:** *(type `cancel` to abort)*")
+        title = await bot.wait_for("message", check=check, timeout=60)
+        if title.content.lower() == "cancel":
+            return await ctx.send("❌ Embed creation canceled.", delete_after=4)
+        await title.delete()
 
-    await ctx.send("📝 Enter the description:")
-    desc = await bot.wait_for("message", check=check)
-    await desc.delete()
+        await ctx.send("📝 **Enter the description:** *(type `cancel` to abort)*")
+        desc = await bot.wait_for("message", check=check, timeout=60)
+        if desc.content.lower() == "cancel":
+            return await ctx.send("❌ Embed creation canceled.", delete_after=4)
+        await desc.delete()
 
-    message = (
-        f"📣 **{title.content}**\n"
-        f"{desc.content}"
-    )
+        formatted = (
+            f"╔══════════════════════════╗\n"
+            f"📣 **{title.content}**\n"
+            f"{desc.content}\n"
+            f"╚══════════════════════════╝"
+        )
 
-    await ctx.send(message)
+        await ctx.send(formatted)
+
+    except asyncio.TimeoutError:
+        await ctx.send("⌛ Timeout. Try again.", delete_after=5)
+    except Exception as e:
+        await ctx.send(f"❌ Error: `{e}`", delete_after=6)
 
 @bot.command()
 async def clear(ctx, amount: int = 5):
@@ -139,7 +206,8 @@ async def clear(ctx, amount: int = 5):
                         break
                 except discord.HTTPException:
                     continue
-        await ctx.send(f"🧹 Cleared {deleted} messages.", delete_after=4)
+        await ctx.send(f"🧹 Cleared {deleted} messages.",
+        delete_after=11)
     except Exception as e:
         await ctx.send(f"❌ Error while clearing: {e}", delete_after=6)
 
@@ -155,42 +223,35 @@ async def dm(ctx, guild_id: int, cantidad: int, *, mensaje: str):
     if not guild:
         return await ctx.send("❌ Guild not found. Make sure you're in that server.", delete_after=5)
 
-    count_sent = 0
-    count_skipped = 0
-    count_failed = 0
+    sent, skipped, failed = 0, 0, 0
+    members = [m for m in guild.members if not m.bot and m != bot.user and not m.guild_permissions.administrator]
 
-    for member in guild.members:
-        if count_sent >= cantidad:
-            break
-
-        if member.bot or member == bot.user:
-            continue
-
-        if member.guild_permissions.administrator:
-            count_skipped += 1
-            continue
-
+    for member in members[:cantidad]:
         try:
-            await asyncio.wait_for(member.send(mensaje), timeout=4)
+            await member.send(mensaje)
             print(f"✅ Sent to {member}")
-            count_sent += 1
-        except (discord.Forbidden, discord.HTTPException):
-            print(f"⛔ Cannot DM {member}")
-            count_skipped += 1
-        except asyncio.TimeoutError:
-            print(f"⏳ Timeout while trying to DM {member}")
-            count_failed += 1
+            sent += 1
+        except discord.Forbidden:
+            print(f"⛔ Cannot DM {member} (forbidden)")
+            skipped += 1
+        except discord.HTTPException:
+            print(f"❌ HTTP error with {member}")
+            failed += 1
         except Exception as e:
             print(f"❌ Error with {member}: {e}")
-            count_failed += 1
+            failed += 1
 
-        await asyncio.sleep(1.5)
+        await asyncio.sleep(0.75)
 
     await ctx.send(
-        f"📨 Done sending messages.\n✅ Sent: {count_sent}\n⛔ Skipped (DMs/Admin): {count_skipped}\n❌ Failed: {count_failed}",
-        delete_after=10
-    )
+        f"📨 Finished sending DMs.\n"
+        f"✅ Sent: {sent}\n"
+        f"⛔ Skipped (forbidden/admin): {skipped}\n"
+        f"❌ Failed: {failed}",
+        delete_after=11)
 
+def safe_filename(name):
+    return re.sub(r'[<>:"/\\|?*]', '_', name)
 
 @bot.command()
 async def emojis(ctx, guild_id: int, *, path: str = None):
@@ -200,59 +261,104 @@ async def emojis(ctx, guild_id: int, *, path: str = None):
     if not guild:
         return await ctx.send("❌ Guild not found.", delete_after=5)
 
-    base_dir = os.path.abspath(path or os.path.join("stickers", str(guild.id)))
+    try:
+        base_dir = os.path.abspath(path or os.path.join("stickers", str(guild.id)))
+        if not os.path.isdir(base_dir):
+            os.makedirs(base_dir, exist_ok=True)
+    except Exception:
+        base_dir = os.path.abspath(os.path.join("stickers", str(guild.id)))
+
     emoji_dir = os.path.join(base_dir, "emojis")
     sticker_dir = os.path.join(base_dir, "stickers")
-
     os.makedirs(emoji_dir, exist_ok=True)
     os.makedirs(sticker_dir, exist_ok=True)
+
+    total_emojis = 0
+    total_stickers = 0
 
     async with aiohttp.ClientSession() as session:
         for emoji in guild.emojis:
             ext = "gif" if emoji.animated else "png"
+            filename = safe_filename(emoji.name)
             url = f"https://cdn.discordapp.com/emojis/{emoji.id}.{ext}"
-            file_path = os.path.join(emoji_dir, f"{emoji.name}.{ext}")
+            path = os.path.join(emoji_dir, f"{filename}.{ext}")
             try:
                 async with session.get(url) as resp:
                     if resp.status == 200:
-                        with open(file_path, "wb") as f:
+                        with open(path, "wb") as f:
                             f.write(await resp.read())
+                        total_emojis += 1
             except Exception as e:
-                print(f"❌ Failed to download emoji {emoji.name}: {e}")
+                print(f"❌ Failed emoji {emoji.name}: {e}")
 
         for sticker in guild.stickers:
+            filename = safe_filename(sticker.name)
             url = str(sticker.url)
-            ext = "png" if "image" in sticker.format else "json"
-            file_path = os.path.join(sticker_dir, f"{sticker.name}.{ext}")
+            path = os.path.join(sticker_dir, f"{filename}.png")
             try:
                 async with session.get(url) as resp:
                     if resp.status == 200:
-                        with open(file_path, "wb") as f:
+                        with open(path, "wb") as f:
                             f.write(await resp.read())
+                        total_stickers += 1
             except Exception as e:
-                print(f"❌ Failed to download sticker {sticker.name}: {e}")
+                print(f"❌ Failed sticker {sticker.name}: {e}")
 
-    await ctx.send(f"📦 Assets saved to: `{base_dir}`", delete_after=7)
+    await ctx.send(f"📦 Saved {total_emojis} emojis and {total_stickers} stickers to: `{base_dir}`",
+        delete_after=11)
 
 @bot.command()
 async def reopendm(ctx):
     await ctx.message.delete()
+
     reopened = 0
     skipped = 0
 
-    for dm in bot.private_channels:
-        if isinstance(dm, discord.DMChannel):
-            try:
-                await dm.send("\u200b")  
-                reopened += 1
-                await asyncio.sleep(1)  
-            except Exception:
-                skipped += 1
+    targets = [
+        dm for dm in bot.private_channels
+        if isinstance(dm, discord.DMChannel) and dm.recipient and not dm.recipient.bot
+    ]
+
+    async def try_send(dm):
+        nonlocal reopened, skipped
+        try:
+            await dm.send("\u200b")
+            reopened += 1
+        except Exception:
+            skipped += 1
+
+    await asyncio.gather(*(try_send(dm) for dm in targets))
 
     await ctx.send(
-        f"📬 Attempted to reopen {reopened + skipped} DMs.\n✅ Success: {reopened}\n❌ Skipped/Failed: {skipped}",
-        delete_after=8
+        f"📬 Attempted to reopen {reopened + skipped} DMs.\n"
+        f"✅ Success: {reopened}\n"
+        f"❌ Skipped/Failed: {skipped}",
+        delete_after=11
     )
+
+@bot.command()
+async def say(ctx, cantidad: int, *, mensaje: str):
+    await ctx.message.delete()
+
+    if cantidad > 25:
+        return await ctx.send("⚠️ Max 25 messages allowed per use.", delete_after=6)
+
+    destino = ctx.channel
+
+    sent = 0
+    for _ in range(cantidad):
+        try:
+            await destino.send(mensaje)
+            sent += 1
+        except discord.HTTPException:
+            break
+        except Exception as e:
+            return await ctx.send(f"❌ Stopped after {sent} messages.\nError: `{e}`", delete_after=6)
+
+    try:
+        await ctx.send(f"📣 Sent `{sent}` messages.", delete_after=5)
+    except:
+        pass
 
 @bot.command()
 async def logout(ctx):
@@ -260,4 +366,10 @@ async def logout(ctx):
     await ctx.send("👋 Kalium shutting down...")
     await bot.close()
 
-bot.run(token)
+while True:
+    try:
+        bot.run(token)
+    except Exception as e:
+        print(f"❌ Bot crashed: {e}")
+        time.sleep(10)
+        print("🔁 Attempting to reconnect...")
