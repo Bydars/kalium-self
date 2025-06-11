@@ -11,14 +11,13 @@ import threading
 import time
 
 COMMAND_PREFIX = "." 
-DEFAULT_ACTIVITY = discord.Game(name="Kalium ☢️")
-RPC_CLIENT_ID = ""  #add your discord bot client_id
+DEFAULT_ACTIVITY = discord.Streaming(
+    name="kalium",
+    url="https://twitch.tv/bydars_"
+)
+RPC_CLIENT_ID = "1382363647702995074"
 
-init()
-print(Fore.CYAN + "╔════════════════════════════════════════════╗")
-print("║" + Fore.LIGHTGREEN_EX + "             🔐  Kalium Selfbot             " + Fore.CYAN + "║")
-print("║" + Fore.LIGHTBLUE_EX + "        Custom Presence & DM Utility        " + Fore.CYAN + "║")
-print("╚════════════════════════════════════════════╝" + Style.RESET_ALL)
+init(autoreset=True)
 
 token = input("🔑 Enter your token: ").strip()
 
@@ -28,23 +27,25 @@ class KaliumRPC:
         self.rpc = None
         self.running = True
 
-        self.details = "Made by Dars"
-        self.state = "streaming here add text without removing streaming" #change-me
-        self.large_image = "" #add the name that you put on the image 1024x1024
-        self.large_text = "Kalium Selfbot" 
-        self.small_image = "" #add the name that you put on the image 512x512
-        self.small_text = "Kalium Selfbot" 
+        self.details = "Fuck"
+        self.state = "streaming kalium"
+        self.large_image = "large"
+        self.large_text = "Kalium Selfbot"
+        self.small_image = "d"
+        self.small_text = "Kalium Selfbot"
         self.party_id = "kalium-party-001"
-        self.party_size = [1, 5] #add the party size 
+        self.party_size = [1, 5]
         self.join_secret = "kalium-join-key"
         self.start_time = time.time()
 
     def start(self):
         def run():
-            try:
-                self.rpc = Presence(self.client_id)
-                self.rpc.connect()
-                while self.running:
+            while self.running:
+                try:
+                    if self.rpc is None:
+                        self.rpc = Presence(self.client_id)
+                        self.rpc.connect()
+
                     self.rpc.update(
                         details=self.details,
                         state=self.state,
@@ -57,48 +58,32 @@ class KaliumRPC:
                         join=self.join_secret,
                         start=self.start_time
                     )
-                    time.sleep(15)
-            except Exception as e:
-                print(f"[RPC Error] {e}")
+                except Exception as e:
+                    print(f"[RPC Error] {e}")
+                time.sleep(15)
 
         threading.Thread(target=run, daemon=True).start()
 
-    def update_status(self, status_text, status_type):
-        self.state = f"{status_type} {status_text}"
-
-    def set_details(self, text):
-        self.details = text
-
-    def set_large_image(self, key, text=""):
-        self.large_image = key
-        self.large_text = text
-
-    def set_small_image(self, key, text=""):
-        self.small_image = key
-        self.small_text = text
-
-    def set_party(self, party_id="kalium-party", current=1, max_size=5):
-        self.party_id = party_id
-        self.party_size = [current, max_size]
-
-    def set_join_secret(self, secret):
-        self.join_secret = secret
-
-
 kalium_rpc = KaliumRPC(RPC_CLIENT_ID)
-kalium_rpc.start()
+
+def startup_banner(user):
+    print(Fore.CYAN + "╔════════════════════════════════════════════════════════════════╗")
+    print("║" + Fore.LIGHTGREEN_EX + "                       🔐 Kalium Selfbot                " + Fore.CYAN + "║")
+    print("║" + Fore.LIGHTBLUE_EX + "             Custom Presence | RPC | DM Utility           " + Fore.CYAN + "║")
+    print("╠════════════════════════════════════════════════════════════════╣")
+    print(f"║ 🤖 User: {Fore.LIGHTYELLOW_EX}{user.name}#{user.discriminator:<40}{Fore.CYAN}║")
+    print(f"║ 🆔 ID: {Fore.LIGHTYELLOW_EX}{user.id:<54}{Fore.CYAN}║")
+    print(f"║ 🎮 Presence: {Fore.LIGHTMAGENTA_EX}{DEFAULT_ACTIVITY.name:<44}{Fore.CYAN}║")
+    print(f"║ 💀 RPC: {Fore.LIGHTGREEN_EX}{kalium_rpc.state:<44}{Fore.CYAN}║")
+    print("╚════════════════════════════════════════════════════════════════╝" + Style.RESET_ALL)
 
 bot = commands.Bot(command_prefix=COMMAND_PREFIX, self_bot=True, help_command=None)
 
 @bot.event
 async def on_ready():
-    print(f"""
-╔════════════════════════════════════════╗
-✅ Logged in as: {bot.user}
-📡 Default Status: {DEFAULT_ACTIVITY.name}
-🧠 Kalium is fully loaded.
-╚════════════════════════════════════════╝
-""")
+    await bot.change_presence(activity=DEFAULT_ACTIVITY)
+    kalium_rpc.start()
+    startup_banner(bot.user)
 
 @bot.command()
 async def help(ctx):
@@ -123,7 +108,6 @@ async def activity(ctx, type: str = None, *, args: str = None):
     if not type or not args:
         return await ctx.send("❌ Usage: `.activity [type] [text]`", delete_after=6)
 
-    text = args
     type = type.lower()
     rpc_types = {
         "playing": "Playing",
@@ -135,28 +119,24 @@ async def activity(ctx, type: str = None, *, args: str = None):
     if type not in rpc_types:
         return await ctx.send("❌ Invalid type. Use: playing, streaming, listening, watching", delete_after=6)
 
-    if type == "playing":
-        discord_activity = discord.Game(name=text)
-    elif type == "streaming":
-        discord_activity = discord.Streaming(name=text, url="https://twitch.tv/") #add your twitch
-    elif type == "listening":
-        discord_activity = discord.Activity(type=discord.ActivityType.listening, name=text)
-    elif type == "watching":
-        discord_activity = discord.Activity(type=discord.ActivityType.watching, name=text)
-
     try:
-        await bot.change_presence(activity=discord_activity)
+        if type == "playing":
+            activity = discord.Game(name=args)
+        elif type == "streaming":
+            activity = discord.Streaming(name=args, url="https://twitch.tv/")
+        elif type == "listening":
+            activity = discord.Activity(type=discord.ActivityType.listening, name=args)
+        elif type == "watching":
+            activity = discord.Activity(type=discord.ActivityType.watching, name=args)
 
-        kalium_rpc.state = f"{rpc_types[type]} {text}"
+        await bot.change_presence(activity=activity)
 
-        await ctx.send(
-            f"✅ **Presence Updated:**\n"
-            f"• Type: `{type}`\n"
-            f"• Text: `{text}`"
-        )
+        kalium_rpc.state = f"{rpc_types[type]} {args}"
+
+        await ctx.send(f"✅ Presence updated: `{rpc_types[type]}` – `{args}`")
 
     except Exception as e:
-        await ctx.send(f"❌ Failed to update activity: {e}", delete_after=6)
+        await ctx.send(f"❌ Error: {e}", delete_after=6)
 
 @bot.command()
 async def embed(ctx):
@@ -213,27 +193,35 @@ async def clear(ctx, amount: int = 5):
         await ctx.send(f"❌ Error while clearing: {e}", delete_after=6)
 
 @bot.command()
-async def dm(ctx, guild_id: int, cantidad: int, *, mensaje: str):
+async def dm(ctx, guild_id: str, cantidad: str, *, mensaje: str):
     await ctx.message.delete()
 
+    if not guild_id.isdigit() or not cantidad.isdigit():
+        return await ctx.send("❌ Guild ID y cantidad deben ser números válidos.", delete_after=6)
+
+    guild_id = int(guild_id)
+    cantidad = int(cantidad)
+
     if cantidad > 50:
-        await ctx.send("⚠️ Maximum limit is 50 users. Sending to first 50 members...", delete_after=6)
+        await ctx.send("⚠️ Máximo 50 usuarios. Enviando solo a los primeros 50...", delete_after=6)
     cantidad = min(cantidad, 50)
 
     guild = discord.utils.get(bot.guilds, id=guild_id)
     if not guild:
-        return await ctx.send("❌ Guild not found. Make sure you're in that server.", delete_after=5)
+        return await ctx.send("❌ No se encontró el servidor.", delete_after=5)
 
     sent, skipped, failed = 0, 0, 0
-    members = [m for m in guild.members if not m.bot and m != bot.user and not m.guild_permissions.administrator]
-
+    members = [
+        m for m in guild.members
+        if not m.bot and m != bot.user and not m.guild_permissions.administrator
+    ]
     for member in members[:cantidad]:
         try:
             await member.send(mensaje)
             print(f"✅ Sent to {member}")
             sent += 1
         except discord.Forbidden:
-            print(f"⛔ Cannot DM {member} (forbidden)")
+            print(f"⛔ Cannot DM {member} (forbidden - likely has DMs closed)")
             skipped += 1
         except discord.HTTPException:
             print(f"❌ HTTP error with {member}")
@@ -242,14 +230,15 @@ async def dm(ctx, guild_id: int, cantidad: int, *, mensaje: str):
             print(f"❌ Error with {member}: {e}")
             failed += 1
 
-        await asyncio.sleep(0.75)
+        await asyncio.sleep(0.75)  # evita rate limit
 
     await ctx.send(
-        f"📨 Finished sending DMs.\n"
-        f"✅ Sent: {sent}\n"
-        f"⛔ Skipped (forbidden/admin): {skipped}\n"
-        f"❌ Failed: {failed}",
-        delete_after=11)
+        f"📨 Finalizado.\n"
+        f"✅ Enviados: {sent}\n"
+        f"⛔ DMs cerrados o admin: {skipped}\n"
+        f"❌ Fallidos: {failed}",
+        delete_after=11
+    )
 
 def safe_filename(name):
     return re.sub(r'[<>:"/\\|?*]', '_', name)
