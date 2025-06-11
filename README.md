@@ -1,10 +1,12 @@
-# 🔐 Kalium Selfbot
+###  🔐 Kalium Selfbot
 
 **Kalium** is a powerful and aesthetic Discord selfbot written in Python. It features a clean console UI, DM automation, emoji/sticker saving, status customization, and built-in Discord Rich Presence (RPC) via `pypresence`.
 
+remember to add and change what i told you to do, also if your going to make ur own code base of mines, giveme credits.
+
 ---
 
-## ⚙️ Features
+### ⚙️ Features
 
 - 🎮 Custom activity types (`playing`, `streaming`, `listening`, `watching`)
 - 📝 Embed-style message creation
@@ -12,6 +14,7 @@
 - 📬 Reopen closed DMs automatically
 - 📦 Download emojis & stickers from any server
 - 🧠 Live Rich Presence (RPC) support
+  📣 Sends a message multiple times (works in both DMs and channels)
 - 🔐 Token-based login with custom status
 
 ---
@@ -50,7 +53,7 @@ pip install -r requirements.txt
 RPC_CLIENT_ID = "ur_discord_bot_client_id"
 ```
 
-# You must create a Discord Application at discord.com/developers/applications, go to Rich Presence > Art Assets, and upload your image size 1024x1024 (e.g. large) there.
+You must create a Discord Application at discord.com/developers/applications, go to Rich Presence > Art Assets, and upload your image size 1024x1024 (e.g. large) and the small one should be in 512x512.
 
 ## remember the name that you put when you upload
 # now change this part of the code (line:30):
@@ -64,17 +67,21 @@ large_image="change-me",
 python kalium.py
 ```
 
-## Paste your token when prompted.
+---
+
+Paste your token when prompted.
 
 ## ✅ You're now logged in and Kalium Selfbot is active!
 
- 📖 Available Commands
- Command	Description
- .activity [type] [text]	Set a custom activity (types: playing, streaming, listening, watching)
- .status [text]	Shortcut for .activity playing
- .embed	Create a styled message through prompt
- .dm [guild_id] [amount] [message]	DM up to 50 non-admin users with open DMs
- .clear [amount]	Delete your own messages in the channel
- .emojis [guild_id] (optional_path)	Download all emojis & stickers from the server
- .reopendm	Reopens closed DMs by sending blank messages
- .logout Shuts down Kalium selfbot safely
+📖 Available Commands
+
+    Command	    Description
+- .activity [type] [text]	Set a custom activity (types: playing, streaming, listening, watching)
+- .status [text]	Shortcut for .activity playing
+- .embed	Create a styled message through prompt
+- .dm [guild_id] [amount] [message]	DM up to 50 non-admin users with open DMs
+- .clear [amount]	Delete your own messages in the channel
+- .emojis [guild_id] (optional_path)	Download all emojis & stickers from the server
+- .reopendm	Reopens closed DMs by sending blank messages
+- .say [amount] [message]  Sends a message multiple times (works in both DMs and channels)
+- .logout Shuts down Kalium selfbot safely

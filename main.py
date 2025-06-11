@@ -111,6 +111,7 @@ async def help(ctx):
         "🧹 `.clear [amount]` – Deletes your messages\n"
         "📦 `.emojis [guild_id] (opcional_path)` – Save all emojis and stickers from the server\n"
         "📬 `.reopendm` – Reopens recent closed DMs by sending invisible messages\n"
+        "📣 `.say [amount] [message]` – Sends a message multiple times (works in both DMs and channels)\n"
         "👋 `.logout` – Shut down Kalium\n"
     )
     await ctx.send(msg)
